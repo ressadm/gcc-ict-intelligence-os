@@ -2,19 +2,11 @@
 
 import { useEffect, useState } from 'react';
 
-const STORAGE_KEY = 'gcc-ict-theme';
-
 export function ThemeToggle() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   useEffect(() => {
-    let initial: 'dark' | 'light' = 'dark';
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored === 'light' || stored === 'dark') initial = stored;
-    } catch { /* ignore */ }
-    setTheme(initial);
-    applyTheme(initial);
+    applyTheme('dark');
   }, []);
 
   function applyTheme(t: 'dark' | 'light') {
@@ -27,7 +19,6 @@ export function ThemeToggle() {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
     applyTheme(next);
-    try { window.localStorage.setItem(STORAGE_KEY, next); } catch { /* ignore */ }
   }
 
   return (

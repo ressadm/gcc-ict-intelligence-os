@@ -22,14 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <head>
-        {/* Inline FOUC-prevention: read theme before paint */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(()=>{try{var t=localStorage.getItem('gcc-ict-theme');var d=document.documentElement;if(t==='light'){d.classList.remove('dark');d.classList.add('light');}else{d.classList.add('dark');d.classList.remove('light');}}catch(e){}})();`,
-          }}
-        />
-      </head>
+      <head />
       <body className="min-h-screen antialiased">
         {children}
       </body>
