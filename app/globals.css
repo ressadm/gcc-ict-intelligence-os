@@ -23,6 +23,26 @@ html.light body {
   color: #11141a;
 }
 
+/* Light-mode overrides for the dark-by-default Tailwind palette.
+   We invert the ink scale rather than touching every component. */
+html.light .text-ink-100 { color: #0b0d10; }
+html.light .text-ink-200 { color: #1c2129; }
+html.light .text-ink-300 { color: #262c36; }
+html.light .text-ink-400 { color: #4b5566; }
+html.light .text-ink-500 { color: #6a7383; }
+html.light .text-ink-600 { color: #8a93a3; }
+
+html.light .bg-ink-950 { background-color: #f5f5f1; }
+html.light .bg-ink-900,
+html.light .dark\:bg-ink-900 { background-color: #ffffff; }
+html.light .bg-ink-950\/80,
+html.light .dark\:bg-ink-950\/80 { background-color: rgba(245, 245, 241, 0.85); }
+html.light .bg-ink-950\/60 { background-color: rgba(245, 245, 241, 0.7); }
+
+html.light .border-white\/5 { border-color: rgba(17, 20, 26, 0.08); }
+html.light .border-white\/10 { border-color: rgba(17, 20, 26, 0.12); }
+html.light .hover\:border-teal\/40:hover { border-color: rgba(95, 179, 166, 0.45); }
+
 /* Selection */
 ::selection {
   background-color: rgba(95, 179, 166, 0.35);
