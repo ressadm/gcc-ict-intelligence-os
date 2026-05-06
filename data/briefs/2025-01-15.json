@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "date": "2025-01-15",
+  "generated_at": "2025-01-15T05:00:00.000Z",
+  "title": "GCC ICT Intelligence Brief",
+  "executive_summary": "Sample seed brief used for offline build and UI development. Replace by running the daily refresh against the Perplexity Sonar API. The picture suggested by these placeholder signals is that GCC ICT demand is bifurcating between sovereign AI capacity build-out (concentrated in KSA and UAE) and a parallel, slower-burning enterprise modernisation cycle that incumbents are routing through hyperscaler partnerships rather than greenfield infra.",
+  "top_signals": [
+    {
+      "id": "seed-1",
+      "headline": "Sovereign AI capacity continues to anchor GCC ICT capex",
+      "summary": "KSA's HUMAIN and UAE's G42 / Core42 both signalling fresh GPU and data-centre commitments, paired with hyperscaler co-investment vehicles. Pattern: sovereign vehicles taking the equity risk; hyperscalers supply software and operating layer.",
+      "why_it_matters": "Sets the unit economics for L1/L2 capacity in the region for 2025–2027. Telco B2B and IT services players need to position around managed services on top of this capacity rather than competing for the underlying build.",
+      "domains": ["cloud-ai-hyperscalers", "gov-regulation-megaprojects"],
+      "layers": ["L1", "L2"],
+      "signal_type": "watch",
+      "geography": ["KSA", "UAE"],
+      "sources": [
+        { "title": "Placeholder source — replace on first refresh", "url": "https://example.com/seed-1", "publisher": "Seed" }
+      ]
+    },
+    {
+      "id": "seed-2",
+      "headline": "Enterprise AI agent rollouts moving from pilot to procurement",
+      "summary": "Anecdotal but converging: regional banks and government entities issuing RFPs for AI agent platforms attached to existing enterprise software estates rather than standalone AI products.",
+      "why_it_matters": "L3 / L5 opportunity for SI players who can integrate agent orchestration with SAP, Oracle, and Salesforce backbones. Pure-play AI vendors without an SI motion will struggle to convert.",
+      "domains": ["enterprise-apps", "it-services"],
+      "layers": ["L3", "L5"],
+      "signal_type": "opportunity",
+      "geography": ["GCC"],
+      "sources": [
+        { "title": "Placeholder source — replace on first refresh", "url": "https://example.com/seed-2", "publisher": "Seed" }
+      ]
+    },
+    {
+      "id": "seed-3",
+      "headline": "Cyber regulation tightening around critical national infrastructure",
+      "summary": "NCA and TDRA both reportedly preparing updated CNI controls. Likely effect: managed SOC and compliance-aligned services become procurement gating, not differentiators.",
+      "why_it_matters": "Cyber budgets rotate from product purchases to managed services and audit-aligned operating models. Local-presence requirements favour domestic and Tier-1 GSI providers.",
+      "domains": ["cybersecurity", "gov-regulation-megaprojects"],
+      "layers": ["L5"],
+      "signal_type": "watch",
+      "geography": ["KSA", "UAE"],
+      "sources": [
+        { "title": "Placeholder source — replace on first refresh", "url": "https://example.com/seed-3", "publisher": "Seed" }
+      ]
+    }
+  ],
+  "demand_pulse": [
+    {
+      "segment": "Hyperscaler-attached managed services (KSA + UAE)",
+      "trajectory": "accelerating",
+      "evidence": "Sovereign capacity build creates pull-through demand for migration, FinOps, and operate-mode contracts.",
+      "sources": []
+    },
+    {
+      "segment": "Standalone on-prem private cloud refresh",
+      "trajectory": "softening",
+      "evidence": "Buyer preference shifting toward sovereign-cloud landing zones over net-new on-prem.",
+      "sources": []
+    },
+    {
+      "segment": "Telco B2B connectivity-only deals",
+      "trajectory": "steady",
+      "evidence": "Connectivity remains commodity; growth concentrated where telcos bundle managed services or vertical solutions.",
+      "sources": []
+    }
+  ],
+  "deals_and_partnerships": [
+    {
+      "type": "Partnership",
+      "parties": ["Hyperscaler", "GCC Sovereign Vehicle"],
+      "headline": "Placeholder partnership entry — first refresh will populate real deals.",
+      "value_or_scope": "Scope TBD",
+      "domains": ["cloud-ai-hyperscalers"],
+      "sources": [
+        { "title": "Placeholder source", "url": "https://example.com/seed-deal-1", "publisher": "Seed" }
+      ]
+    }
+  ],
+  "contrarian_view": {
+    "thesis": "The GCC will under-monetise its sovereign AI capacity in the 24-month window because regional enterprise buyers are not yet equipped to consume it.",
+    "consensus_view": "Sovereign GPU capacity will translate quickly into regional AI revenue and exportable services.",
+    "why_it_might_be_wrong": "Demand-side absorption depends on data readiness, MLOps maturity, and regulatory comfort that are still 18–36 months away in most enterprises. Capacity may sit underutilised or be re-exported as wholesale compute at thin margins.",
+    "what_to_watch": [
+      "Utilisation disclosures from sovereign vehicles",
+      "Wholesale GPU pricing trends",
+      "Number of enterprise AI workloads actually running in-region vs. announced"
+    ],
+    "sources": []
+  },
+  "implications": [
+    {
+      "audience": "Telco B2B head of strategy",
+      "recommendation": "Reposition portfolio around managed services on hyperscaler landing zones; deprioritise connectivity-only growth targets.",
+      "horizon": "90d"
+    },
+    {
+      "audience": "GSI / SI regional leadership",
+      "recommendation": "Stand up an AI-agent-on-SAP/Oracle integration practice now; the procurement window opens before the technology fully stabilises.",
+      "horizon": "30d"
+    },
+    {
+      "audience": "Cyber managed services leader",
+      "recommendation": "Align service catalogue to NCA/TDRA CNI control updates; treat compliance attestation as a deal qualifier, not a sales tool.",
+      "horizon": "now"
+    }
+  ],
+  "meta": {
+    "model_synthesis": "seed",
+    "model_discovery": "seed",
+    "discovery_query_count": 0,
+    "raw_signal_count": 0,
+    "notes": "Seed brief for UI and offline build. Replace by running scripts/refresh-brief.ts."
+  }
+}
