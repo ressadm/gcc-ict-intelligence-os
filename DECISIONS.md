@@ -49,6 +49,7 @@ One line per decision. Format: `[YYYY-MM-DD] CHOSEN over REJECTED — reason.`
 - [v1] `validate-briefs` as a separate step in CI over relying on build to catch malformed JSON — catches schema drift early.
 - [v1] `output: 'export'` in `next.config.mjs` over server/standalone output — the product is static-file-first and this produces a portable `out/` artifact for Vercel and static preview hosting.
 - [v1] In-memory theme toggle over `localStorage` persistence — preserves the required dark-default toggle while avoiding blocked browser storage APIs in sandboxed preview hosting.
+- [v1] Relative static asset prefix over root-absolute Next asset URLs — keeps CSS/JS loading when the exported app is hosted from a nested preview path.
 - [v1] Polite 400 ms spacing between discovery queries over fully parallel `Promise.all` — avoids burst rate-limit on Sonar; total wall-clock cost is minutes, not hours.
 
 ## Things explicitly out of scope (rejected)
