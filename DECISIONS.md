@@ -38,6 +38,7 @@ One line per decision. Format: `[YYYY-MM-DD] CHOSEN over REJECTED — reason.`
 - [v1] Filters (domain + layer) as plain `<select>` over multi-select chips — single-user, low-friction, fully keyboard-accessible, no JS framework needed.
 - [v1] Archive search as client-side `String.includes` over Fuse.js/MiniSearch — corpus is small (a few hundred briefs at most over years), zero dependency cost.
 - [v1] Static SVG `app/icon.svg` over generated favicon set — Next.js auto-generates the link tag, one source of truth.
+- [v1] Light mode implemented via CSS overrides under `html.light .text-ink-*` over per-component `dark:` Tailwind variants — keeps the JSX clean (palette is dark-by-default, light is the special case) and avoids touching every component when the palette evolves.
 
 ## Tooling & ops
 
