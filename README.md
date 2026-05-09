@@ -74,6 +74,17 @@ The master analyst prompt lives in `prompts/master-analyst-prompt.md`. It is rea
 
 The web app itself does **not** read `PERPLEXITY_API_KEY`. It only reads JSON files. Keys are only required for the refresh script (locally and in GitHub Actions).
 
+### Troubleshooting: "Refresh daily brief" workflow fails immediately
+
+If the GitHub Actions run fails at the **Preflight — verify PERPLEXITY_API_KEY is configured** step with an annotation about a missing repository secret, the cron is running without an API key. To fix:
+
+1. Open the repo on GitHub → **Settings → Secrets and variables → Actions**.
+2. Click **New repository secret**.
+3. Name it exactly `PERPLEXITY_API_KEY` and paste the Perplexity Sonar API key as the value.
+4. Re-run the failed workflow under **Actions → Refresh daily brief → Run workflow**, or wait for the next 05:00 UTC schedule.
+
+Environment-scoped secrets are not used by this workflow; the secret must be a **repository** secret.
+
 ## Deployment
 
 1. Push to GitHub.

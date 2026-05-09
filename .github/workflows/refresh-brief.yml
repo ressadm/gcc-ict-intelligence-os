@@ -36,6 +36,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Preflight — verify PERPLEXITY_API_KEY is configured
+        env:
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
+        run: |
+          if [ -z "${PERPLEXITY_API_KEY}" ]; then
+            echo "::error title=Missing repository secret::PERPLEXITY_API_KEY is not set. Add it under Settings → Secrets and variables → Actions → New repository secret (name: PERPLEXITY_API_KEY). See README → Secrets / environment."
+            exit 1
+          fi
+          echo "PERPLEXITY_API_KEY is present."
+
       - name: Run brief refresh
         env:
           PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}

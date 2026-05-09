@@ -51,6 +51,7 @@ One line per decision. Format: `[YYYY-MM-DD] CHOSEN over REJECTED — reason.`
 - [v1] In-memory theme toggle over `localStorage` persistence — preserves the required dark-default toggle while avoiding blocked browser storage APIs in sandboxed preview hosting.
 - [v1] Relative static asset prefix over root-absolute Next asset URLs — keeps CSS/JS loading when the exported app is hosted from a nested preview path.
 - [v1] Polite 400 ms spacing between discovery queries over fully parallel `Promise.all` — avoids burst rate-limit on Sonar; total wall-clock cost is minutes, not hours.
+- [2026-05-09] Explicit preflight step in `refresh-brief.yml` that fails with a `::error::` annotation when `PERPLEXITY_API_KEY` is empty over relying on the script's own missing-key error — surfaces the misconfiguration as a clear actionable GitHub Actions annotation pointing operators at Settings → Secrets and variables → Actions, instead of an opaque failure deep inside `npm run refresh-brief`.
 
 ## Things explicitly out of scope (rejected)
 
