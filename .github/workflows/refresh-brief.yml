@@ -2,8 +2,8 @@ name: Refresh daily brief
 
 on:
   schedule:
-    # 05:00 UTC every day. Adjust to your operating time zone.
-    - cron: '0 5 * * *'
+    # 05:00 UTC every Monday (08:00 Riyadh / KSA, GMT+3).
+    - cron: '0 5 * * 1'
   workflow_dispatch:
     inputs:
       date:

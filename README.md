@@ -44,7 +44,7 @@ The seed brief lives at `data/briefs/2025-01-15.json` and exists so the UI rende
 
 ## Daily refresh
 
-A scheduled GitHub Actions workflow (`.github/workflows/refresh-brief.yml`) runs at **05:00 UTC** every day. It:
+A scheduled GitHub Actions workflow (`.github/workflows/refresh-brief.yml`) runs at **05:00 UTC every Monday** (08:00 Riyadh). It:
 
 - Calls `npm run refresh-brief`.
 - Validates every brief (`npm run validate-briefs`).
@@ -81,7 +81,7 @@ If the GitHub Actions run fails at the **Preflight — verify PERPLEXITY_API_KEY
 1. Open the repo on GitHub → **Settings → Secrets and variables → Actions**.
 2. Click **New repository secret**.
 3. Name it exactly `PERPLEXITY_API_KEY` and paste the Perplexity Sonar API key as the value.
-4. Re-run the failed workflow under **Actions → Refresh daily brief → Run workflow**, or wait for the next 05:00 UTC schedule.
+4. Re-run the failed workflow under **Actions → Refresh daily brief → Run workflow**, or wait for the next Monday 05:00 UTC schedule.
 
 Environment-scoped secrets are not used by this workflow; the secret must be a **repository** secret.
 
