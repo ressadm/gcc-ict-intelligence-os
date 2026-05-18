@@ -468,18 +468,42 @@ async function runSynthesis(rawSignals: RawSignal[]): Promise<Brief> {
   let lastErr: unknown = null;
   for (let attempt = 1; attempt <= MAX_SYNTHESIS_ATTEMPTS; attempt++) {
     try {
-      const resp = await callSonar({
-        model: MODEL_SYNTHESIS,
-        temperature: 0.15,
-        max_tokens: 8000,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        response_format: { type: 'json_schema', json_schema: jsonSchemaContract() },
-      });
-      const content = extractContent(resp);
-      const parsedJson = extractFirstJSON(content);
+     const synthesisFormatOverride = [
+  'FORMAT OVERRIDE — THIS OVERRIDES ANY CONFLICTING FORMAT INSTRUCTIONS IN THE MASTER PROMPT.',
+  'Return exactly one JSON object matching the provided schema.',
+  'Do not return prose outside JSON.',
+  'Do not return markdown fences.',
+  'Do not return bullets unless they are JSON arrays required by the schema.',
+  'executive_summary must be a single string.',
+  'contrarian_view must be an object.',
+  'implications[].horizon must be exactly one of: now, 30d, 90d, 12m.',
+  'Output JSON only.',
+].join('\n');
+
+const resp = await callSonar({
+  model: MODEL_SYNTHESIS,
+  temperature: 0.15,
+  max_tokens: 8000,
+  messages: [
+    { role: 'system', content: `${systemPrompt}\n\n${synthesisFormatOverride}` },
+    { role: 'user', content: userPrompt },
+  ],
+  response_format: { type: 'json_schema', json_schema: jsonSchemaContract() },
+});
+
+const content = extractContent(resp);
+
+// TEMP DEBUG — keep until this works once successfully
+console.log('[synthesis] raw response keys:', Object.keys(resp ?? {}));
+console.log('[synthesis] extracted content preview:', JSON.stringify((content || '').slice(0, 1000)));
+
+if (!content || !content.trim()) {
+  console.log('[synthesis] full raw response:', JSON.stringify(resp).slice(0, 8000));
+  throw new Error('Synthesis returned empty content');
+}
+
+const parsedJson = extractFirstJSON(content);
+
       const normalized = normalizeBriefCandidate(parsedJson) as Record<string, unknown>;
 
       // Force-correct fields the model might mislabel.
