@@ -1,4 +1,5 @@
-name: Refresh daily brief
+name: Refresh weekly brief on schedule
+
 
 on:
   schedule:
