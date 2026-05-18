@@ -1,7 +1,7 @@
 // Weekly brief refresh.
 //
 // Stage 1: DISCOVERY. For each query in config/search-queries.ts, ask sonar-pro
-//          to surface fresh signals from the last 48 hours. Collect raw signals
+//          to surface fresh signals from the last 7 days. Collect raw signals
 //          plus citations.
 // Stage 2: SYNTHESIS. Feed the raw signals into sonar-reasoning-pro using the
 //          master analyst prompt as the system message and a strict JSON schema
@@ -91,7 +91,7 @@ async function runDiscovery(): Promise<RawSignal[]> {
     const userPrompt = [
       `You are doing rapid signal discovery for a GCC B2B ICT intelligence brief.`,
       `Topic: ${q.query}`,
-      `Window: only the last 48 hours. If nothing genuinely new in 48h, say "NO NEW SIGNALS" and stop.`,
+      `Window: the last 7 days. Prefer developments from this week. If there are only weak or sparse public signals, say "LOW SIGNAL DENSITY" instead of claiming nothing happened.`,
       `Return up to 5 distinct, verifiable signals. For each:`,
       `- One-line headline`,
       `- 1-2 sentence what-happened`,
@@ -105,9 +105,9 @@ async function runDiscovery(): Promise<RawSignal[]> {
       const resp = await callSonar({
         model: MODEL_DISCOVERY,
         temperature: 0.1,
-        search_recency_filter: 'day',
+        search_recency_filter: 'week',
         messages: [
-          { role: 'system', content: 'You are a precise signals analyst. Surface only verifiable, recent, GCC-relevant ICT signals. Cite real URLs. If nothing material, say so.' },
+          { role: 'system', content: 'You are a precise weekly signals analyst. Surface only verifiable, recent, GCC-relevant ICT signals from the last 7 days, prioritising this week. Cite real URLs. If evidence is sparse, say LOW SIGNAL DENSITY; do not overstate that nothing happened.' },
           { role: 'user', content: userPrompt },
         ],
       });
@@ -461,7 +461,7 @@ async function runSynthesis(rawSignals: RawSignal[]): Promise<Brief> {
     .join('\n\n---\n\n');
 
   const userPrompt = [
-    `Today is ${date}. Produce the Weekly GCC ICT Intelligence Brief in strict JSON.`,
+    `Today is ${date}. Produce the Weekly GCC ICT Intelligence Brief in strict JSON, focused on what changed this week.`,
     ``,
     `## ALLOWED DOMAIN IDS`,
     domainList,
@@ -470,7 +470,7 @@ async function runSynthesis(rawSignals: RawSignal[]): Promise<Brief> {
     layerList,
     ``,
     `## RULES`,
-    `- Use only signals supported by the discovery corpus below or by your live retrieval. No fabrication.`,
+    `- Use only signals supported by the discovery corpus below or by your live retrieval. No fabrication. This is a weekly brief, not a 48-hour bulletin.`,
     `- Every top_signal MUST have at least one source URL. Every deal MUST have at least one source URL.`,
     `- domains[] values MUST come from ALLOWED DOMAIN IDS. layers[] values MUST come from ALLOWED LAYER IDS.`,
     `- date MUST equal "${date}".`,
@@ -486,9 +486,19 @@ async function runSynthesis(rawSignals: RawSignal[]): Promise<Brief> {
     `- Include a Contrarian View that genuinely contradicts the consensus.`,
     `- Implications must be concrete actions for a B2B telecom/ICT executive, mapped to horizon.`,
     ``,
-    `## DISCOVERY CORPUS (last 48h, may include "NO NEW SIGNALS" or errors — reflect that honestly)`,
+    `## DISCOVERY CORPUS (last 7 days, may include "LOW SIGNAL DENSITY", "NO NEW SIGNALS", or errors — handle with calibrated language)`,
     corpus.slice(0, 60_000),
   ].join('\n');
+
+  const lowSignalCount = rawSignals.filter((s) => /LOW SIGNAL DENSITY|NO NEW SIGNALS|DISCOVERY ERROR/i.test(s.raw)).length;
+  const lowSignalRatio = rawSignals.length ? lowSignalCount / rawSignals.length : 1;
+  if (lowSignalRatio >= 0.7) {
+    const e: Error & { stage?: string; attempts?: number; detail?: unknown } = new Error('discovery corpus too weak for reliable weekly brief');
+    e.stage = 'discovery';
+    e.attempts = 1;
+    e.detail = { lowSignalCount, rawSignalCount: rawSignals.length, lowSignalRatio };
+    throw e;
+  }
 
   let lastErr: unknown = null;
   for (let attempt = 1; attempt <= MAX_SYNTHESIS_ATTEMPTS; attempt++) {
