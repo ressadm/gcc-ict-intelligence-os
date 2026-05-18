@@ -244,18 +244,184 @@ function jsonSchemaContract() {
   } as const;
 }
 
-function extractFirstJSON(text: string): unknown {
-  // Sonar reasoning models sometimes wrap output in ```json ... ```. Strip and parse.
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const candidate = fenced ? fenced[1] : text;
-  // Find first { ... } balanced block.
-  const start = candidate.indexOf('{');
-  const end = candidate.lastIndexOf('}');
-  if (start === -1 || end === -1 || end < start) {
+function stripReasoning(text: string): string {
+  // sonar-reasoning-pro emits <think>...</think> chain-of-thought before the answer.
+  // Strip everything inside <think> blocks (including unclosed ones at end of stream).
+  return text
+    .replace(/<think>[\s\S]*?<\/think>/g, '')
+    .replace(/<think>[\s\S]*$/, '')
+    .trim();
+}
+
+function extractFencedJSON(text: string): string | null {
+  // Prefer a ```json fenced block if present, then any fenced block.
+  const jsonFence = text.match(/```json\s*([\s\S]*?)```/i);
+  if (jsonFence && jsonFence[1].trim().startsWith('{')) return jsonFence[1];
+  const anyFence = text.match(/```\s*([\s\S]*?)```/);
+  if (anyFence && anyFence[1].trim().startsWith('{')) return anyFence[1];
+  return null;
+}
+
+function findBalancedJSONObject(text: string): string | null {
+  // Walk the string and return the first balanced { ... } block, respecting strings/escapes.
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) {
+      if (esc) { esc = false; continue; }
+      if (ch === '\\') { esc = true; continue; }
+      if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') { inStr = true; continue; }
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return text.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
+function extractFirstJSON(rawText: string): unknown {
+  const text = stripReasoning(rawText);
+  const fenced = extractFencedJSON(text);
+  const candidate = fenced ?? text;
+  const balanced = findBalancedJSONObject(candidate) ?? findBalancedJSONObject(text);
+  if (!balanced) {
     throw new Error('Synthesis output contained no JSON object');
   }
-  const slice = candidate.slice(start, end + 1);
-  return JSON.parse(slice);
+  try {
+    return JSON.parse(balanced);
+  } catch (e) {
+    // Last resort: try the naive first-{ to last-} slice in case of weird quoting.
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start !== -1 && end > start) {
+      return JSON.parse(text.slice(start, end + 1));
+    }
+    throw e;
+  }
+}
+
+// ---------- normalization ----------
+//
+// The master analyst prompt asks the model for prose-shaped output ("four bullets",
+// "one paragraph", "Now / 12-month / 3-year"). The schema is stricter. Rather than
+// rewrite the master prompt, we accept predictable model deviations and coerce them
+// into the schema shape. Anything we can't safely coerce is left as-is so Zod fails.
+
+function toStringFromMaybeArray(v: unknown): unknown {
+  if (Array.isArray(v)) {
+    // Join bullet-style arrays into a single paragraph string.
+    return v
+      .map((x) => (typeof x === 'string' ? x : typeof x === 'object' && x !== null ? JSON.stringify(x) : String(x)))
+      .map((s) => s.trim().replace(/^[-*•\d.\)\s]+/, '').trim())
+      .filter(Boolean)
+      .join(' ');
+  }
+  return v;
+}
+
+function normalizeHorizon(v: unknown): unknown {
+  if (typeof v !== 'string') return v;
+  const s = v.trim().toLowerCase();
+  if (s === 'now' || s === 'immediate' || s === 'this week' || s === 'this-week') return 'now';
+  if (/^30[- ]?d(ay)?s?$/.test(s) || s === '1 month' || s === '1-month' || s === 'one month') return '30d';
+  if (/^90[- ]?d(ay)?s?$/.test(s) || s === '3 month' || s === '3-month' || s === '3 months' || s === '3-months' || s === 'quarter') return '90d';
+  if (
+    /^12[- ]?m(onth)?s?$/.test(s) ||
+    s === '12 months' || s === '12-months' || s === '1 year' || s === '1-year' || s === 'year' ||
+    s === '3-year' || s === '3 year' || s === '3 years' || s === '3-years' || s === '3-year structural' || s === '3 year structural' ||
+    s === 'structural' || s === 'long-term' || s === 'long term'
+  ) return '12m';
+  return v;
+}
+
+function normalizeContrarian(v: unknown): unknown {
+  // Schema expects an object; master prompt asks for one paragraph (string). Wrap it.
+  if (typeof v === 'string' && v.trim()) {
+    return {
+      thesis: v.trim(),
+      consensus_view: 'See thesis — model returned a single-paragraph contrarian view.',
+      why_it_might_be_wrong: v.trim(),
+      what_to_watch: [],
+      sources: [],
+    };
+  }
+  if (v && typeof v === 'object' && !Array.isArray(v)) {
+    const o = v as Record<string, unknown>;
+    // Fill missing required string fields by reusing the thesis when present.
+    const thesis = typeof o.thesis === 'string' ? o.thesis : '';
+    if (thesis) {
+      if (typeof o.consensus_view !== 'string' || !o.consensus_view) o.consensus_view = thesis;
+      if (typeof o.why_it_might_be_wrong !== 'string' || !o.why_it_might_be_wrong) o.why_it_might_be_wrong = thesis;
+    }
+    if (!Array.isArray(o.what_to_watch)) o.what_to_watch = [];
+    if (!Array.isArray(o.sources)) o.sources = [];
+    return o;
+  }
+  return v;
+}
+
+function normalizeSignalArray(arr: unknown): unknown {
+  if (!Array.isArray(arr)) return arr;
+  return arr.map((item, idx) => {
+    if (!item || typeof item !== 'object') return item;
+    const s = item as Record<string, unknown>;
+    // Common renamings.
+    if (!s.headline && typeof s.title === 'string') s.headline = s.title;
+    if (!s.summary && typeof s.what_happened === 'string') s.summary = s.what_happened;
+    if (!s.why_it_matters && typeof s.implication === 'string') s.why_it_matters = s.implication;
+    if (!s.id) s.id = `signal-${idx + 1}`;
+    if (s.signal_type && typeof s.signal_type === 'string') {
+      s.signal_type = (s.signal_type as string).toLowerCase();
+    }
+    if (!Array.isArray(s.domains)) s.domains = [];
+    if (!Array.isArray(s.layers)) s.layers = [];
+    if (!Array.isArray(s.geography)) s.geography = [];
+    if (!Array.isArray(s.sources)) s.sources = [];
+    return s;
+  });
+}
+
+function normalizeDemandPulse(arr: unknown): unknown {
+  if (!Array.isArray(arr)) return arr;
+  return arr.map((item) => {
+    if (!item || typeof item !== 'object') return item;
+    const s = item as Record<string, unknown>;
+    if (!s.segment && typeof s.name === 'string') s.segment = s.name;
+    if (!s.evidence && typeof s.signal === 'string') s.evidence = s.signal;
+    if (typeof s.trajectory === 'string') s.trajectory = (s.trajectory as string).toLowerCase();
+    if (!Array.isArray(s.sources)) s.sources = [];
+    return s;
+  });
+}
+
+function normalizeImplications(arr: unknown): unknown {
+  if (!Array.isArray(arr)) return arr;
+  return arr.map((item) => {
+    if (!item || typeof item !== 'object') return item;
+    const s = item as Record<string, unknown>;
+    if (!s.recommendation && typeof s.action === 'string') s.recommendation = s.action;
+    if (s.horizon !== undefined) s.horizon = normalizeHorizon(s.horizon);
+    return s;
+  });
+}
+
+function normalizeBriefCandidate(input: unknown): unknown {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return input;
+  const o = { ...(input as Record<string, unknown>) };
+  if ('executive_summary' in o) o.executive_summary = toStringFromMaybeArray(o.executive_summary);
+  if ('contrarian_view' in o) o.contrarian_view = normalizeContrarian(o.contrarian_view);
+  if ('top_signals' in o) o.top_signals = normalizeSignalArray(o.top_signals);
+  if ('demand_pulse' in o) o.demand_pulse = normalizeDemandPulse(o.demand_pulse);
+  if ('implications' in o) o.implications = normalizeImplications(o.implications);
+  return o;
 }
 
 async function runSynthesis(rawSignals: RawSignal[]): Promise<Brief> {
@@ -286,7 +452,12 @@ async function runSynthesis(rawSignals: RawSignal[]): Promise<Brief> {
     `- schema_version MUST be 1.`,
     `- meta.model_synthesis MUST be "${MODEL_SYNTHESIS}". meta.model_discovery MUST be "${MODEL_DISCOVERY}".`,
     `- meta.discovery_query_count MUST be ${DISCOVERY_QUERIES.length}. meta.raw_signal_count MUST be ${rawSignals.length}.`,
-    `- Output ONLY the JSON object, no prose, no markdown fences.`,
+    `- Output ONLY the JSON object, no prose, no markdown fences, no <think> tags.`,
+    `- executive_summary MUST be a single string (one paragraph). Do NOT return an array of bullets — concatenate bullets into one paragraph.`,
+    `- contrarian_view MUST be an object with keys { thesis, consensus_view, why_it_might_be_wrong, what_to_watch[], sources[] }. Do NOT return a plain string.`,
+    `- implications[].horizon MUST be exactly one of: "now", "30d", "90d", "12m" (lowercase). Map "Now" → "now", "12-month"/"1 year"/"12 months" → "12m", "3-year"/"structural" → "12m", "quarter"/"3 months" → "90d", "1 month" → "30d".`,
+    `- Each top_signal MUST include id, headline, summary, why_it_matters, domains[], layers[], signal_type ("critical"|"watch"|"opportunity"), geography[], sources[] with at least one {title,url}.`,
+    `- Each demand_pulse item MUST include segment, trajectory ("accelerating"|"steady"|"softening"|"unclear"), evidence, sources[].`,
     `- Include a Contrarian View that genuinely contradicts the consensus.`,
     `- Implications must be concrete actions for a B2B telecom/ICT executive, mapped to horizon.`,
     ``,
@@ -309,15 +480,16 @@ async function runSynthesis(rawSignals: RawSignal[]): Promise<Brief> {
       });
       const content = extractContent(resp);
       const parsedJson = extractFirstJSON(content);
+      const normalized = normalizeBriefCandidate(parsedJson) as Record<string, unknown>;
 
       // Force-correct fields the model might mislabel.
       const candidate = {
-        ...(parsedJson as Record<string, unknown>),
+        ...normalized,
         schema_version: 1,
         date,
         generated_at: nowISO(),
         meta: {
-          ...((parsedJson as Record<string, unknown>).meta as Record<string, unknown> | undefined ?? {}),
+          ...((normalized.meta as Record<string, unknown> | undefined) ?? {}),
           model_synthesis: MODEL_SYNTHESIS,
           model_discovery: MODEL_DISCOVERY,
           discovery_query_count: DISCOVERY_QUERIES.length,
