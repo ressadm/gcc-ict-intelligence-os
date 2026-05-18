@@ -1,0 +1,49 @@
+name: Rebuild brief index
+
+on:
+  push:
+    paths:
+      - 'data/briefs/*.json'
+      - '.github/workflows/rebuild-brief-index.yml'
+  workflow_dispatch:
+
+jobs:
+  rebuild-index:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Rebuild data/briefs/index.json
+        run: |
+          python <<'PY'
+          import json
+          from pathlib import Path
+          base = Path('data/briefs')
+          base.mkdir(parents=True, exist_ok=True)
+          files = sorted([p.name for p in base.glob('*.json') if p.name != 'index.json'])
+          (base / 'index.json').write_text(json.dumps({'files': files}, indent=2) + '\n', encoding='utf-8')
+          print('Updated index.json with', len(files), 'briefs')
+          PY
+
+      - name: Commit updated index
+        run: |
+          if git diff --quiet -- data/briefs/index.json; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/briefs/index.json
+          git commit -m 'Update brief archive index'
+          git push
