@@ -286,19 +286,42 @@ function findBalancedJSONObject(text: string): string | null {
   }
   return null;
 }
-
 function extractFirstJSON(rawText: string): unknown {
-  const text = stripReasoning(rawText);
+  const text = stripReasoning(String(rawText ?? '')).trim();
+
+  if (!text) {
+    throw new Error('Synthesis output was empty');
+  }
+
+  if (text.startsWith('{') && text.endsWith('}')) {
+    return JSON.parse(text);
+  }
+
+  if (text.startsWith('"') && text.endsWith('"')) {
+    try {
+      const unwrapped = JSON.parse(text);
+      if (typeof unwrapped === 'string') {
+        const inner = unwrapped.trim();
+        if (inner.startsWith('{') && inner.endsWith('}')) {
+          return JSON.parse(inner);
+        }
+      }
+    } catch {
+      // ignore and continue
+    }
+  }
+
   const fenced = extractFencedJSON(text);
   const candidate = fenced ?? text;
   const balanced = findBalancedJSONObject(candidate) ?? findBalancedJSONObject(text);
+
   if (!balanced) {
-    throw new Error('Synthesis output contained no JSON object');
+    throw new Error(`Synthesis output contained no JSON object. Preview: ${text.slice(0, 500)}`);
   }
+
   try {
     return JSON.parse(balanced);
   } catch (e) {
-    // Last resort: try the naive first-{ to last-} slice in case of weird quoting.
     const start = text.indexOf('{');
     const end = text.lastIndexOf('}');
     if (start !== -1 && end > start) {
@@ -307,6 +330,8 @@ function extractFirstJSON(rawText: string): unknown {
     throw e;
   }
 }
+
+
 
 // ---------- normalization ----------
 //
