@@ -1,4 +1,4 @@
-// Daily brief refresh.
+// Weekly brief refresh.
 //
 // Stage 1: DISCOVERY. For each query in config/search-queries.ts, ask sonar-pro
 //          to surface fresh signals from the last 48 hours. Collect raw signals
@@ -436,7 +436,7 @@ async function runSynthesis(rawSignals: RawSignal[]): Promise<Brief> {
     .join('\n\n---\n\n');
 
   const userPrompt = [
-    `Today is ${date}. Produce the daily GCC ICT Intelligence Brief in strict JSON.`,
+    `Today is ${date}. Produce the Weekly GCC ICT Intelligence Brief in strict JSON.`,
     ``,
     `## ALLOWED DOMAIN IDS`,
     domainList,
