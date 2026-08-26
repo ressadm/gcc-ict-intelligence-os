@@ -73,8 +73,14 @@ async function clearError(): Promise<void> {
 }
 
 function refreshDate(): string {
-  return process.env.REFRESH_DATE || todayUTC();
+  const override = process.env.REFRESH_DATE;
+  if (override) return override;
+
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() - 28);
+  return date.toISOString().slice(0, 10);
 }
+
 
 // ---------- discovery ----------
 
