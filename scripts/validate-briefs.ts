@@ -9,7 +9,9 @@ async function main() {
   const dir = path.join(process.cwd(), 'data', 'briefs');
   let files: string[];
   try {
-    files = (await fs.readdir(dir)).filter((f) => f.endsWith('.json'));
+    files = (await fs.readdir(dir)).filter(
+  (f) => f.endsWith('.json') && f !== 'index.json'
+);
   } catch {
     console.log('No data/briefs directory; nothing to validate.');
     return;
