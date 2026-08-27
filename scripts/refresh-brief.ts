@@ -555,11 +555,17 @@ const parsedJson = extractFirstJSON(content);
         date,
         generated_at: nowISO(),
         meta: {
-          ...((normalized.meta as Record<string, unknown> | undefined) ?? {}),
-          model_synthesis: MODEL_SYNTHESIS,
-          model_discovery: MODEL_DISCOVERY,
-          discovery_query_count: DISCOVERY_QUERIES.length,
-          raw_signal_count: rawSignals.length,
+  ...((normalized.meta as Record<string, unknown> | undefined) ?? {}),
+  model_synthesis: MODEL_SYNTHESIS,
+  model_discovery: MODEL_DISCOVERY,
+  discovery_query_count: DISCOVERY_QUERIES.length,
+  raw_signal_count: rawSignals.length,
+  notes:
+    typeof (normalized.meta as Record<string, unknown> | undefined)?.notes === 'string'
+      ? (normalized.meta as Record<string, unknown>).notes
+      : '',
+},
+
         },
       };
 
