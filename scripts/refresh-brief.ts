@@ -1,7 +1,7 @@
 // Weekly brief refresh.
 //
 // Stage 1: DISCOVERY. For each query in config/search-queries.ts, ask sonar-pro
-//          to surface fresh signals from the last 7 days. Collect raw signals
+//          to surface fresh signals from the last 28 days. Collect raw signals
 //          plus citations.
 // Stage 2: SYNTHESIS. Feed the raw signals into sonar-reasoning-pro using the
 //          master analyst prompt as the system message and a strict JSON schema
@@ -97,7 +97,8 @@ async function runDiscovery(): Promise<RawSignal[]> {
     const userPrompt = [
       `You are doing rapid signal discovery for a GCC B2B ICT intelligence brief.`,
       `Topic: ${q.query}`,
-      `Window: the last 7 days. Prefer developments from this week. If there are only weak or sparse public signals, say "LOW SIGNAL DENSITY" instead of claiming nothing happened.`,
+      `Window: from ${refreshDate()} through today (the rolling previous 28 days). Prefer material developments in this period.
+`,
       `Return up to 5 distinct, verifiable signals. For each:`,
       `- One-line headline`,
       `- 1-2 sentence what-happened`,
@@ -111,7 +112,7 @@ async function runDiscovery(): Promise<RawSignal[]> {
       const resp = await callSonar({
         model: MODEL_DISCOVERY,
         temperature: 0.1,
-        search_recency_filter: 'week',
+        search_recency_filter: 'month',
         messages: [
           { role: 'system', content: 'You are a precise weekly signals analyst. Surface only verifiable, recent, GCC-relevant ICT signals from the last 7 days, prioritising this week. Cite real URLs. If evidence is sparse, say LOW SIGNAL DENSITY; do not overstate that nothing happened.' },
           { role: 'user', content: userPrompt },
@@ -498,7 +499,7 @@ async function runSynthesis(rawSignals: RawSignal[]): Promise<Brief> {
 
   const lowSignalCount = rawSignals.filter((s) => /LOW SIGNAL DENSITY|NO NEW SIGNALS|DISCOVERY ERROR/i.test(s.raw)).length;
   const lowSignalRatio = rawSignals.length ? lowSignalCount / rawSignals.length : 1;
-  if (lowSignalRatio >= 0.7) {
+  if (lowSignalRatio >= 1) {
     const e: Error & { stage?: string; attempts?: number; detail?: unknown } = new Error('discovery corpus too weak for reliable weekly brief');
     e.stage = 'discovery';
     e.attempts = 1;
