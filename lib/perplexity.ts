@@ -89,4 +89,4 @@ export function extractCitations(resp: SonarResponse): string[] {
 
 // Sonar models. Override via env if Perplexity renames them.
 export const MODEL_DISCOVERY = process.env.PERPLEXITY_MODEL_DISCOVERY || 'sonar-pro';
-export const MODEL_SYNTHESIS = process.env.PERPLEXITY_MODEL_SYNTHESIS || 'sonar-reasoning-pro';
+export const MODEL_SYNTHESIS = process.env.PERPLEXITY_MODEL_SYNTHESIS || 'sonar-pro';
