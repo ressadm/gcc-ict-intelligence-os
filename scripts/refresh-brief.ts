@@ -566,7 +566,7 @@ const parsedJson = extractFirstJSON(content);
       : '',
 },
 
-        },
+  
       };
 
       const result = BriefSchema.safeParse(candidate);
