@@ -72,9 +72,22 @@ async function clearError(): Promise<void> {
   try { await fs.unlink(p); } catch { /* not present */ }
 }
 
-function refreshDate(): string {
-  const override = process.env.REFRESH_DATE;
-  if (override) return override;
+
+
+  function refreshDate(): string {
+  return process.env.REFRESH_DATE || todayUTC();
+
+    function discoveryStartDate(): string {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() - 28);
+  return date.toISOString().slice(0, 10);
+}
+
+}
+
+    
+}
+
 
   const date = new Date();
   date.setUTCDate(date.getUTCDate() - 28);
